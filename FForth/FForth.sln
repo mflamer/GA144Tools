@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FFBoot", "FForth.vcxproj", "{F763F194-1DDC-4E89-9A08-987FD345F748}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FFComp", "..\FFComp\FFComp.vcxproj", "{46319892-162A-4CB5-A7E8-D756EB74EFAC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F763F194-1DDC-4E89-9A08-987FD345F748}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F763F194-1DDC-4E89-9A08-987FD345F748}.Debug|Win32.Build.0 = Debug|Win32
+		{F763F194-1DDC-4E89-9A08-987FD345F748}.Release|Win32.ActiveCfg = Release|Win32
+		{F763F194-1DDC-4E89-9A08-987FD345F748}.Release|Win32.Build.0 = Release|Win32
+		{46319892-162A-4CB5-A7E8-D756EB74EFAC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{46319892-162A-4CB5-A7E8-D756EB74EFAC}.Debug|Win32.Build.0 = Debug|Win32
+		{46319892-162A-4CB5-A7E8-D756EB74EFAC}.Release|Win32.ActiveCfg = Release|Win32
+		{46319892-162A-4CB5-A7E8-D756EB74EFAC}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

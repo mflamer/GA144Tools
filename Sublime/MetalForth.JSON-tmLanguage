@@ -1,0 +1,136 @@
+{
+    "comment": "MetalForth Language. By Mark Flamer", 
+    "fileTypes": [
+        "mfs"
+    ], 
+    "foldingStartMarker": "(?i)^\\s*(Public|Private)?\\s*(Class|Function|Sub|Property)\\s*([a-zA-Z_]\\w*)\\s*(\\(.*\\)\\s*)?$", 
+    "foldingStopMarker": "(?i)^\\s*End (Class|Function|Sub|Property)\\s*$", 
+    "keyEquivalent": "^~A", 
+    "name": "MetalForth", 
+    "patterns": [
+        {
+            "captures": {
+                "1": {
+                    "name": "comment.control.metalforth"
+                }                
+            }, 
+            "match": "^\\s*((?i:\\:))\\s*([a-zA-Z_]\\w*)", 
+            "name": "meta.function.nimrod"
+        }, 
+        {
+            "captures": {
+                "1": {
+                    "name": "punctuation.definition.comment.nimrod"
+                }
+            }, 
+            "match": "#.*$\\n?", 
+            "name": "comment.line.apostrophe.nimrod"
+        }, 
+        {
+            "captures": {
+                "1": {
+                    "name": "punctuation.definition.comment.nimrod"
+                }
+            }, 
+            "match": "(REM ).*$\\n?", 
+            "name": "comment.line.rem.nimrod"
+        }, 
+        {
+            "match": "\\b(block|break|case|continue|discard|do|elif|else|end|except|for|from|if|method|type|proc|return|when|while|with|without|import|var|let|const|template|macro|generic|using|iterator|converter)\\b", 
+            "name": "keyword.control.nimrod"
+        },
+        {
+            "name": "comment.control.metalforth",
+            "match": "((([\\(]{1})+([.]{1}))([a-z]+[a-zA-Z0-9_]*)(([.]{1})+([}]{1})))",
+            "captures": {
+                "1": {"name": "pragma.source.nimrod"},                
+                "2": {"name": "pragma.source.nimrod"},
+                "3": {"name": "pragma.source.nimrod"}           
+            }
+        },
+        {
+            "name": "parentheses.source.nimrod",
+            "match": "[\\(\\)\\{\\}]"
+        },
+        {
+            "name": "ticks.source.nimrod",
+            "match": "[`]"
+        }, 
+        {
+            "match": "[|.,!@#$%^&*<>:?~=/\\-\\+\\[\\]]", 
+            "name": "operator.nimrod"
+        },
+        {
+            "match": "\\b(and|or|not|xor|shl|shr|div|mod|in|notin|is|isnot|of)\\b", 
+            "name": "operator.nimrod"
+        }, 
+        {
+            "match": "\\b(addr|atomic|const|enum|export|ptr|ref|static|tuple|object|var|mixin|typedesc|distinct|array)\\b", 
+            "name": "storage.type.nimrod"
+        }, 
+        {
+            "name": "meta.type.source.nimrod",
+            "match": "\\b([A-Z]+[a-zA-Z0-9_]*)([\\:,+ \\']*)",
+            "captures": {
+                "1": {"name": "entity.name.type.source.nimrod"},
+                "2": {"name": "operator.source.nimrod"}         
+            }   
+        },
+        {
+            "name": "meta.function.source.nimrod",
+            "match": "([a-z]+[a-zA-Z0-9_]*)([\\(]{1})",
+            "captures": {
+                "1": {"name": "entity.name.function.source.nimrod"},                
+                "2": {"name": "parentheses.source.Nimrod"}                        
+            }
+        },
+        {
+            "name": "meta.function.source.nimrod",
+            "match": "([a-z]+[a-zA-Z0-9_]*)([\\[]{1})",
+            "captures": {
+                "1": {"name": "entity.name.function.source.nimrod"},                
+                "2": {"name": "parentheses.source.Nimrod"}                        
+            }
+        },      
+         
+        {"name": "constant.numeric.integer.source.nimrod",
+         "match": "\\b(([0-9][0-9_]*)|([0-9][0-9_]*(u|u8|u16|u32|u64))|([0-9][0-9_]*(i|i8|i16|i32|i64)))\\b"
+        },
+        {"name": "constant.numeric.hex.source.nimrod",
+         "match": "\\b((0x[a-fA-F0-9_]+)|(0x[a-fA-F0-9_]+(u|u8|u16|u32|u64))|(0x[a-fA-F0-9_]+(i|i8|i16|i32|i64)))\\b"
+        },
+        {"name": "constant.numeric.binary.source.nimrod",
+         "match": "\\b((0b[01_]+)|(0b[01_]+(u|u8|u16|u32|u64))|(0b[01_]+(i|i8|i16|i32|i64)))\\b"
+        },
+        {"name": "constant.numeric.float.source.nimrod",
+         "match": "([0-9][0-9_]*(f32|f64|f))|([0-9][0-9_]*([eE][+-]=[0-9_]+))|([0-9][0-9_]*([eE][+-]=[0-9_]+)(f32|f64|f))|([0-9][0-9_]*\\.[0-9_]+)|([0-9][0-9_]*\\.[0-9_]+(f32|f64|f))|([0-9][0-9_]*\\.[0-9_]+%([eE][+-]=[0-9_]+))|([0-9][0-9_]*\\.[0-9_]+%([eE][+-]=[0-9_]+)(f32|f64|f))"
+        },
+        {
+            "match": "(?i:\\b(nil)\\b)", 
+            "name": "constant.language.nimrod"
+        }, 
+        {
+            "begin": "\"", 
+            "beginCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.begin.nimrod"
+                }
+            }, 
+            "end": "\"(?!\")", 
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.end.nimrod"
+                }
+            }, 
+            "name": "string.quoted.double.nimrod", 
+            "patterns": [
+                {
+                    "match": "\"\"", 
+                    "name": "constant.character.escape.apostrophe.nimrod"
+                }
+            ]
+        }
+    ], 
+    "scopeName": "source.nimrod", 
+    "uuid": "4060da00-dca1-11e1-9b23-0800200c9a66"
+}

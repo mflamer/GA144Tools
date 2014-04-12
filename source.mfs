@@ -1,0 +1,32 @@
+
+
+: run
+	 3 !b . .
+	 1 if delay then
+	 2 !b . .
+	 delay
+	 run ;
+
+: delay 
+	 50 for 
+	 200000 push . .
+	 . . . unext
+	 next 
+	 ; . . .
+
+
+run
+
+	  
+	 
+
+	  
+
+
+
+
+
+
+
+
+

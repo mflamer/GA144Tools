@@ -1,0 +1,59 @@
+
+( send this to L who is at warm  5)
+jump --l-          ( set L's P to us )
+dup dup or .       ( set his A to 0 )
+a! 8 for             ( get 9 cells from P and store at A )
+   @p !+ unext 
+
+      --ENDFRAME --l- boot
+
+
+: echo     ( echo char back to 708  9 )  
+   --l- a! @ .           ( set A to L and read A to T )
+   @ 2 for              
+      @p ! unext .      ( pump 3 inst cells to L )
+   --l- a! . .           ( set L's A to L )           
+   jump 22              ( jump to send word )
+
+   ! ;                  ( send T back to A ) 
+        
+jump 0            ( set P to 0 )
+
+
+      --ENDFRAME --l- cold
+
+
+: txBit ( t x n - t x  3 )
+	!b over push . 
+	jump 0xC8 
+  	;
+
+: txByte ( t x - t x  16 )
+   3 txBit 
+   drop . . .
+   7 for 
+      dup 1 and .
+      3 or . . 
+      txBit 
+      drop . . .
+      2/ next 
+   2 txBit
+   drop . . .
+   ; 
+
+: txCell (  3 )
+   txByte
+   txByte
+   drop ;
+
+: send ( n -  4 need A set to port user is pushing from  @22 )	 
+   77 txByte       
+   boot      
+   ;
+
+: ping 
+   --l- a! 77 .
+   ! ;
+
+      --ENDFRAME 0 send
+

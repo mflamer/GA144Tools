@@ -1,0 +1,68 @@
+
+( send this to L who is at warm  5)
+jump --l-          ( set L's P to us )
+dup dup or .       ( set his A to 0 )
+a! 13 for             ( get cells from P and store at A )
+   @p !+ unext 
+
+      --ENDFRAME --l- boot
+
+: trunk ( c - c 2 )
+	 drop -32 + ;
+
+: trans ( c - c  trim ASCII char into 6 bit MF char 10 )
+	 dup 0x00060 and 
+    if ( c > 31 )
+		trunk
+		dup 0x00040 and 
+      if ( c > 95 )
+			trunk
+         ;
+		then	 
+	 then 
+	 drop ; 
+
+: echo     ( echo cell back to A  2 )  
+   @ . . .
+   trans  
+   ! echo ;
+        
+--l- a! . .
+jump echo            ( set P to 0 )
+
+      --ENDFRAME --l- boot
+
+
+: txBit ( t x n - t x  3 )
+	!b over push . 
+	jump 0xC8 
+  	;
+
+: txByte ( t x - t  16 )   
+   3 txBit 
+   drop . . .
+   7 for 
+      dup 1 and .
+      3 or . . 
+      txBit 
+      drop . . .
+      2/ next 
+   2 txBit
+   drop drop . .  
+   ; 
+
+: txCell (  3 )
+   txByte
+   txByte
+   drop ;
+
+: ping 
+   --l- a! @p .
+   "M"
+   ! @ . .
+   txByte 
+   boot 
+   ;
+
+      --ENDFRAME 0 ping
+
