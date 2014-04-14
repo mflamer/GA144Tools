@@ -10,16 +10,9 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Compiler.cpp" />
-    <ClCompile Include="Main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Compiler.h" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{46319892-162A-4CB5-A7E8-D756EB74EFAC}</ProjectGuid>
-    <RootNamespace>FFComp</RootNamespace>
+    <ProjectGuid>{DD7D32C5-5E1F-4BD2-9694-E5F36AF2E0D2}</ProjectGuid>
+    <RootNamespace>GA144Tools</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -68,6 +61,15 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="source\Compiler.cpp" />
+    <ClCompile Include="source\Main.cpp" />
+    <ClCompile Include="source\Serial.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\Compiler.h" />
+    <ClInclude Include="source\Serial.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

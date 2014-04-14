@@ -21,6 +21,8 @@ CCompiler::CCompiler(std::string SrcFilename, std::string BinFilename){
 
 	 //fwrite(&ic, 1, 3, binout);// make sure there is room for first inst cell 
 	 CompileFile(SrcFilename);
+
+    fclose(binout);
 }
 
 
@@ -434,6 +436,8 @@ void CCompiler::CompileFile(std::string SrcFileName)
 
 
 	 std::cout << "compilation sucessful \n";	 
+
+
 	
 }
 
