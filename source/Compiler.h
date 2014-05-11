@@ -6,6 +6,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <array>
 
 
 struct ForwardRef
@@ -15,6 +16,12 @@ struct ForwardRef
 	 char slot;
 };
 
+
+struct TNode
+{
+   int fRamWords;
+   std::vector<unsigned char> fCode;   
+};
 
 
 class CCompiler
@@ -42,13 +49,24 @@ private:
     void EndBlock();
     void EndFrame(int transferAddr, int completionAddr);
 
-	 void InitMap();
+    void StartNode(int nodeNum);
+    void EndRam(); 
+    void EndNode();
+    void Reset();
+	 void InitWordMap();
+    void InitBootOrder();
+    void InitBootPath();
+
+    void WriteBootChipSeq();
+    void PortPump( int port, int wrdCnt );
+	void LoadPump( int port, int wrdCnt );
 
 	 FILE* binout;
 	 int fCell;
 	 int ic; // instruction counter
 	 int h; // 
-	 char slot; // slot counter	 
+	 char slot; // slot counter	
+    int fNode;
 
 	 std::string tok;
 	 std::vector<unsigned char> binBlk;
@@ -58,5 +76,10 @@ private:
 	 std::vector<ForwardRef> fRefs;
 	 std::vector<ForwardRef> thenStack;
 	 std::vector<int> forStack;
+
+    std::map<int, TNode> fGrid;
+    std::array<int, 143> fNodeBootOrder;
+    std::array<int, 143> fNodeBootPath;
+
 };
 

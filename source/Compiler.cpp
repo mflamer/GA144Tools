@@ -1,4 +1,6 @@
 #include "Compiler.h"
+#include <math.h>
+
 
 void U32ToU18(int x, char* data)
 {
@@ -17,7 +19,9 @@ CCompiler::CCompiler(std::string SrcFilename, std::string BinFilename){
 	 h = 1;
 	 slot = 0;
 	 fCell = 0;
-	 InitMap();
+	 InitWordMap();
+    InitBootOrder();
+    InitBootPath();
 
 	 //fwrite(&ic, 1, 3, binout);// make sure there is room for first inst cell 
 	 CompileFile(SrcFilename);
@@ -81,20 +85,77 @@ void CCompiler::EndBlock()
 
    if(fwrite(binBlk.data(), 1, binBlk.size(), binout) == binBlk.size())
    {
-      binBlk.clear();
-      fCell = 0;
-      ic = 0;
-      h = 1;
-      slot = 0;
-      nameMap.clear();
-      fRefs.clear();
-      thenStack.clear();
-      forStack.clear();
-      InitMap();
+      Reset();
       std::cout << "Sucessfully wrote a block to the file \n";
    }
    else
       std::cout << "error: failed to write block to file \n";
+}
+
+void CCompiler::Reset()
+{
+   binBlk.clear();
+   fCell = 0;
+   ic = 0;
+   h = 1;
+   slot = 0;
+   nameMap.clear();
+   fRefs.clear();
+   thenStack.clear();
+   forStack.clear();
+   InitWordMap();
+}
+
+void CCompiler::StartNode(int nodeNum)
+{
+   fNode = nodeNum; 
+   Reset();
+}
+
+void CCompiler::EndRam()
+{
+   // make sure we write the last inst cell
+	if(fCell)
+	{
+		while(slot != 0)				
+			AddInst(0x1C); // "."				
+	}
+   
+   fGrid.at(fNode).fRamWords = ic + 1;
+}
+
+void CCompiler::EndNode()
+{
+   // make sure we write the last inst cell
+	if(fCell)
+	{
+		while(slot != 0)				
+			AddInst(0x1C); // "."				
+	}
+
+	// resolve forward references
+	std::vector<ForwardRef>::iterator itr = fRefs.begin();
+	while(itr != fRefs.end())
+	{
+		std::map<std::string, int>::iterator ref = nameMap.find(itr->ident);
+		if(ref == nameMap.end())
+		{					 
+				std::cout << "error: unable to resolve forward reference - " << tok.c_str() <<  " \n";
+		}
+		else
+		{
+				ResolveFRef(*itr, ref->second);
+		}
+		itr++;
+	}
+
+   if(fGrid.at(fNode).fRamWords > 144)
+      std::cout << "Error: Binary too big to fit in node - " << binBlk.size() << " \n";
+   else
+   {
+      fGrid.at(fNode).fCode = binBlk;
+   }
+   Reset();
 }
 
 
@@ -116,6 +177,12 @@ bool CCompiler::NextTok(FILE* src)
 	 }while(!isspace(c) && c != EOF);
 	 return true;
 }
+
+
+const int LE = 0x175;
+const int RI = 0x1D5;
+const int UP = 0x145;
+const int DN = 0x115;
 
 
 bool GetPortAddress( std::string tok, int& addr)
@@ -188,7 +255,21 @@ void CCompiler::CompileFile(std::string SrcFileName)
                   AddLit(tok.at(i), false);
                }
             }
-
+            else if(tok == "--NODE")
+            {
+               NextTok(src);
+               int nodeNum = (int)strtol(tok.c_str(), NULL, 0);
+               StartNode(nodeNum);
+            }
+             else if(tok == "--ENDRAM")
+            {
+               NextTok(src);
+               EndRam();
+            }
+            else if(tok == "--ENDNODE")
+            {
+               EndNode();
+            }
             else if(tok == "--ENDFRAME")
             {
                // Make sure to finish last cell
@@ -708,10 +789,8 @@ bool CCompiler::IsLittleInst(char inst)
 }
 
 
-void CCompiler::InitMap()
+void CCompiler::InitWordMap()
 {
-	
-
 	 nameMap["warm"]  = 0xA9;
 	 nameMap["relay"] = 0xA1;
 	 nameMap["*.17"] = 0xB0;
@@ -726,7 +805,238 @@ void CCompiler::InitMap()
 	 nameMap["lsh"] = 0xD9;
 	 nameMap["rsh"] = 0xDB;
 	 nameMap["-dac"] = 0xBC;
-	 nameMap["boot"] = 0xAE;
+	 nameMap["boot"] = 0xAE;	 
+}
 
-	 
+
+void CCompiler::InitBootOrder()
+{
+   int node = 708;
+   size_t index = 0;
+   for(size_t i = 0; i < 9; i++)
+   {
+      node++;
+      fNodeBootOrder[index] = node;     
+      index++;
+   }
+   for(size_t i = 0; i < 3; i++)
+   {      
+      node -= 99;
+      for(size_t j = 0; j < 17; j++)
+      {
+         node--;
+         fNodeBootOrder[index] = node;         
+         index++;
+      }      
+      node -= 101;
+      for(size_t j = 0; j < 17; j++)
+      {
+         node++;
+         fNodeBootOrder[index] = node;         
+         index++;
+      }
+   }
+   node -= 99;
+   for(size_t j = 0; j < 18; j++)
+   {
+      node--;
+      fNodeBootOrder[index] = node;         
+      index++;
+   } 
+   for(size_t j = 0; j < 7; j++)
+   {
+      node += 100;
+      fNodeBootOrder[index] = node;         
+      index++;
+   }
+   for(size_t j = 0; j < 7; j++)
+   {
+      node++;
+      fNodeBootOrder[index] = node;         
+      index++;
+   }
+
+   
+}
+
+void CCompiler::InitBootPath()
+{
+   size_t index = 0;
+   for(size_t i = 0; i < 4; i++)
+   {      
+      fNodeBootPath[index] = LE;
+      index++;
+      fNodeBootPath[index] = RI;   
+      index++;
+   }
+
+   for(size_t i = 0; i < 3; i++)
+   {
+      fNodeBootPath[index] = DN;
+      index++;
+      for(size_t j = 0; j < 8; j++)
+      {
+         fNodeBootPath[index] = RI;   
+         index++;
+         fNodeBootPath[index] = LE;
+         index++;
+      }   
+      fNodeBootPath[index] = UP;
+      index++;
+      for(size_t j = 0; j < 8; j++)
+      {
+         fNodeBootPath[index] = LE;   
+         index++;
+         fNodeBootPath[index] = RI;
+         index++;
+      }  
+   }
+
+   fNodeBootPath[index] = DN;
+   index++;
+   for(size_t j = 0; j < 8; j++)
+   {
+      fNodeBootPath[index] = RI;   
+      index++;
+      fNodeBootPath[index] = LE;
+      index++;
+   }
+   fNodeBootPath[index] = RI;   
+   index++;
+
+   for(size_t j = 0; j < 3; j++)
+   {
+      fNodeBootPath[index] = DN;   
+      index++;
+      fNodeBootPath[index] = UP;
+      index++;
+   }
+   fNodeBootPath[index] = DN;   
+   index++;
+
+   for(size_t j = 0; j < 3; j++)
+   {
+      fNodeBootPath[index] = RI;   
+      index++;
+      fNodeBootPath[index] = LE;
+      index++;
+   }
+   fNodeBootPath[index] = RI;   
+   index++;
+
+}
+
+
+void CCompiler::PortPump( int port, int wrdCnt )// 5 words
+{
+	AddInst(0x08); // @p
+	AddInst(0x18); // dup
+	AddInst(0x1F); // a!
+	AddInst(0x08); // @p
+
+	AddInst(0x03);    // call
+	AddAddress(port); // addr
+
+	AddLit(wrdCnt - 1); // lit
+
+	AddInst(0x1D); // push
+	AddInst(0x0F); // !
+	AddInst(0x1C); // .
+	AddInst(0x1C); // .
+
+	AddInst(0x08); // @p
+	AddInst(0x0F); // !
+	AddInst(0x04); // unext
+	AddInst(0x1C); // .
+
+	EndBlock();
+	Reset();
+
+}
+
+void CCompiler::LoadPump( int port, int wrdCnt )// 5 words
+{
+	AddInst(0x08); // @p	
+	AddInst(0x1F); // a!
+	AddInst(0x08); // @p
+	AddInst(0x1C); // .
+	
+	AddLit(port); // addr
+
+	AddLit(wrdCnt - 1); // lit
+
+	AddInst(0x1D); // push	
+	AddInst(0x1C); // .
+	AddInst(0x1C); // .
+	AddInst(0x1C); // .
+
+	AddInst(0x08); // @p
+	AddInst(0x0D); // !+
+	AddInst(0x04); // unext
+	AddInst(0x1C); // .
+
+	EndBlock();
+	Reset();
+
+}
+
+void CCompiler::DefaultInit()// 1 words
+{
+   AddInst(0x02);    // call
+	AddAddress(0xA9); // warm
+
+   EndBlock();
+	Reset();
+}
+
+
+
+void CCompiler::WriteBootChipSeq()
+{
+	int pumpTotal = 0;
+
+   //Calc total words of data we are going to port pump
+	for(size_t i = 0; i < 143; i++)
+   {
+      //If there is code going into ram we add it and a pump
+      int code = fGrid[fNodeBootOrder[i]].fCode.size() / 3;
+      pumpTotal += code;
+      if(fGrid[fNodeBootOrder[i]].fRamWords > 0) 
+         pumpTotal += 5;
+      if(code == 0)
+         pumpTotal += 1;//DefaultInit
+   }
+   //Each node except the last and boot node gets a port pump
+   pumpTotal += 142 * 5;
+
+   //Now we start adding the code///////
+   //First the port pumps for all the nodes except the last and boot node
+   for(size_t i = 0; i < 143; i++)
+   {
+      //Calc the total code that gets pumped through this node
+      pumpTotal -= 5;// This portPump
+      int code = fGrid[fNodeBootOrder[i]].fCode.size() / 3;
+      pumpTotal -= code;//This nodes code
+      if(fGrid[fNodeBootOrder[i]].fRamWords > 0) 
+         pumpTotal -= 5;//This loadPump       
+      if(code == 0)
+         pumpTotal -= 1;//DefaultInit
+
+      PortPump(fNodeBootPath[i], pumpTotal-1);
+   }
+
+   //Add the code for each node starting from the end of the path
+    for(size_t i = 142; i >= 0; i--)
+    {
+       //If we have ram code add a loadPump
+       if(fGrid[fNodeBootOrder[i]].fRamWords > 0) 
+          LoadPump(0, fGrid[fNodeBootOrder[i]].fRamWords-1); 
+       //If we have no code add defaultInit
+       if(fGrid[fNodeBootOrder[i]].fCode.size() == 0)
+          DefaultInit();
+       else// Or write the nodes code
+         if(fwrite(&fGrid[fNodeBootOrder[i]].fCode, 1, fGrid[fNodeBootOrder[i]].fCode.size(), binout) != fGrid[fNodeBootOrder[i]].fCode.size())
+            std::cout << "error: failed to write block to file \n";
+    }
+
 }
