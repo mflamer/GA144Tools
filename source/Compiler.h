@@ -46,8 +46,8 @@ private:
 	 bool IsLittleInst(char inst);
 	 bool AddrToBig(int addr);
 
-    void EndBlock();
-    void EndFrame(int transferAddr, int completionAddr);
+    void EndBlock();    
+    void EndFrame(int transferAddr, int completionAddr, int numCodeWords = 0);
 
     void StartNode(int nodeNum);
     void EndRam(); 
@@ -59,14 +59,15 @@ private:
 
     void WriteBootChipSeq();
     void PortPump( int port, int wrdCnt );
-	void LoadPump( int port, int wrdCnt );
+	 void LoadPump( int port, int wrdCnt );
+    void DefaultInit();
 
 	 FILE* binout;
 	 int fCell;
 	 int ic; // instruction counter
 	 int h; // 
 	 char slot; // slot counter	
-    int fNode;
+    int fNode;    
 
 	 std::string tok;
 	 std::vector<unsigned char> binBlk;

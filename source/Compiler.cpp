@@ -19,12 +19,16 @@ CCompiler::CCompiler(std::string SrcFilename, std::string BinFilename){
 	 h = 1;
 	 slot = 0;
 	 fCell = 0;
-	 InitWordMap();
+    InitWordMap();
     InitBootOrder();
     InitBootPath();
 
 	 //fwrite(&ic, 1, 3, binout);// make sure there is room for first inst cell 
 	 CompileFile(SrcFilename);
+
+    WriteBootChipSeq();
+
+
 
     fclose(binout);
 }
@@ -37,7 +41,7 @@ CCompiler::~CCompiler(void)
 }
 
 
-void CCompiler::EndFrame(int transferAddr, int completionAddr)
+void CCompiler::EndFrame(int transferAddr, int completionAddr, int numCodeWords)
 {
    //Add the BootFrame header first
    char cell[3];
@@ -46,15 +50,16 @@ void CCompiler::EndFrame(int transferAddr, int completionAddr)
       std::cout << "error: could not write completionAddr to header \n";
    U32ToU18(transferAddr, cell);
    if(fwrite(cell, 1, 3, binout) != 3)
-      std::cout << "error: could not write transferAddr to header \n";
-   U32ToU18(binBlk.size() / 3, cell);
+      std::cout << "error: could not write transferAddr to header \n";   
+   if(!numCodeWords)
+      U32ToU18(binBlk.size() / 3, cell);
+   else
+      U32ToU18(numCodeWords, cell);
    if(fwrite(cell, 1, 3, binout) != 3)
       std::cout << "error: could not write frame length to header \n";
 
 
    EndBlock();   
-
-
 }
 
 
@@ -121,17 +126,16 @@ void CCompiler::EndRam()
 			AddInst(0x1C); // "."				
 	}
    
-   fGrid.at(fNode).fRamWords = ic + 1;
+   fGrid.at(fNode).fRamWords = ic;
 }
 
 void CCompiler::EndNode()
 {
    // make sure we write the last inst cell
-	if(fCell)
-	{
-		while(slot != 0)				
-			AddInst(0x1C); // "."				
-	}
+
+	while(slot != 0)				
+		AddInst(0x1C); // "."				
+	
 
 	// resolve forward references
 	std::vector<ForwardRef>::iterator itr = fRefs.begin();
@@ -149,7 +153,7 @@ void CCompiler::EndNode()
 		itr++;
 	}
 
-   if(fGrid.at(fNode).fRamWords > 144)
+   if(fGrid[fNode].fRamWords > 144)
       std::cout << "Error: Binary too big to fit in node - " << binBlk.size() << " \n";
    else
    {
@@ -255,22 +259,21 @@ void CCompiler::CompileFile(std::string SrcFileName)
                   AddLit(tok.at(i), false);
                }
             }
-            else if(tok == "--NODE")
+            else if(tok == "----NODE----")
             {
                NextTok(src);
                int nodeNum = (int)strtol(tok.c_str(), NULL, 0);
                StartNode(nodeNum);
             }
-             else if(tok == "--ENDRAM")
-            {
-               NextTok(src);
+             else if(tok == "----ENDRAM")
+            {               
                EndRam();
             }
-            else if(tok == "--ENDNODE")
+            else if(tok == "----ENDNODE")
             {
                EndNode();
             }
-            else if(tok == "--ENDFRAME")
+            else if(tok == "----ENDFRAME")
             {
                // Make sure to finish last cell
                while(slot != 0)
@@ -304,7 +307,8 @@ void CCompiler::CompileFile(std::string SrcFileName)
 							
 
 				// Test if tok is an instruction
-				else if(tok == ";")		AddInst(0x00);
+				else if(tok == ";")		
+               AddInst(0x00);
 				else if(tok == "ex")		AddInst(0x01);
 				else if(tok == "jump"){	
 					 AddInst(0x02);
@@ -856,6 +860,14 @@ void CCompiler::InitBootOrder()
       index++;
    }
 
+   //Init fGrid
+   for(size_t j = 0; j < fNodeBootOrder.size(); j++)
+   {
+      TNode n;
+      n.fRamWords = 0;
+      fGrid[fNodeBootOrder.at(j)] = n;
+   }
+
    
 }
 
@@ -937,7 +949,7 @@ void CCompiler::PortPump( int port, int wrdCnt )// 5 words
 	AddInst(0x03);    // call
 	AddAddress(port); // addr
 
-	AddLit(wrdCnt - 1); // lit
+	AddLit(wrdCnt - 1, false); // lit
 
 	AddInst(0x1D); // push
 	AddInst(0x0F); // !
@@ -961,9 +973,9 @@ void CCompiler::LoadPump( int port, int wrdCnt )// 5 words
 	AddInst(0x08); // @p
 	AddInst(0x1C); // .
 	
-	AddLit(port); // addr
+	AddLit(port, false); // addr
 
-	AddLit(wrdCnt - 1); // lit
+	AddLit(wrdCnt - 1, false); // lit
 
 	AddInst(0x1D); // push	
 	AddInst(0x1C); // .
@@ -976,8 +988,6 @@ void CCompiler::LoadPump( int port, int wrdCnt )// 5 words
 	AddInst(0x1C); // .
 
 	EndBlock();
-	Reset();
-
 }
 
 void CCompiler::DefaultInit()// 1 words
@@ -985,8 +995,7 @@ void CCompiler::DefaultInit()// 1 words
    AddInst(0x02);    // call
 	AddAddress(0xA9); // warm
 
-   EndBlock();
-	Reset();
+   EndBlock();	
 }
 
 
@@ -1009,9 +1018,11 @@ void CCompiler::WriteBootChipSeq()
    //Each node except the last and boot node gets a port pump
    pumpTotal += 142 * 5;
 
+   EndFrame(0x1D5, 0xAE, pumpTotal); 
+
    //Now we start adding the code///////
    //First the port pumps for all the nodes except the last and boot node
-   for(size_t i = 0; i < 143; i++)
+   for(size_t i = 0; i < 142; i++)
    {
       //Calc the total code that gets pumped through this node
       pumpTotal -= 5;// This portPump
@@ -1022,21 +1033,23 @@ void CCompiler::WriteBootChipSeq()
       if(code == 0)
          pumpTotal -= 1;//DefaultInit
 
-      PortPump(fNodeBootPath[i], pumpTotal-1);
+      PortPump(fNodeBootPath[i], pumpTotal);
    }
 
    //Add the code for each node starting from the end of the path
-    for(size_t i = 142; i >= 0; i--)
+    for(int i = 142; i >= 0; i--)
     {
        //If we have ram code add a loadPump
        if(fGrid[fNodeBootOrder[i]].fRamWords > 0) 
-          LoadPump(0, fGrid[fNodeBootOrder[i]].fRamWords-1); 
+          LoadPump(0, fGrid[fNodeBootOrder[i]].fRamWords); 
        //If we have no code add defaultInit
        if(fGrid[fNodeBootOrder[i]].fCode.size() == 0)
           DefaultInit();
        else// Or write the nodes code
-         if(fwrite(&fGrid[fNodeBootOrder[i]].fCode, 1, fGrid[fNodeBootOrder[i]].fCode.size(), binout) != fGrid[fNodeBootOrder[i]].fCode.size())
+         if(fwrite(fGrid[fNodeBootOrder[i]].fCode.data(), 1, fGrid[fNodeBootOrder[i]].fCode.size(), binout) != fGrid[fNodeBootOrder[i]].fCode.size())
             std::cout << "error: failed to write block to file \n";
     }
+
+    Reset();
 
 }
