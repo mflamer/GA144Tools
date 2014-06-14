@@ -94,9 +94,9 @@ int main(int argc, char **argv)
                 if(nBytesRead)
                   std::cout << "cool we read some data back - " << strOut << "\n";
 
-                serial.Close();
+                //serial.Close();
 
-
+                while(true){}
 
 
 				}

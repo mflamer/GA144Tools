@@ -28,8 +28,6 @@ CCompiler::CCompiler(std::string SrcFilename, std::string BinFilename){
 
     WriteBootChipSeq();
 
-
-
     fclose(binout);
 }
 
@@ -300,10 +298,10 @@ void CCompiler::CompileFile(std::string SrcFileName)
             }
 
 				// Constant Lits           
-            else if(GetPortAddress(tok, addr))
-            {
-               AddLit(addr);
-            }
+            //else if(GetPortAddress(tok, addr))
+            //{
+            //   AddLit(addr);
+            //}
 							
 
 				// Test if tok is an instruction
@@ -360,12 +358,24 @@ void CCompiler::CompileFile(std::string SrcFileName)
 
 
             	// Test if tok is a number
-				else if(isdigit(tok.at(0)) || (tok.size() > 1 && tok.at(0) == 45) || (tok.size() > 1 && tok.at(0) == 35)) // "-"
+				else if(isdigit(tok.at(0)) 
+               || (tok.size() > 1 && tok.at(0) == 45)  // "-"
+               || (tok.size() > 1 && tok.at(0) == 35)  // "#"
+               || (tok.size() > 1 && tok.at(0) == 38)) // "&"
 				{
 					 bool call = !(tok.at(0) == 35);
-					 if(!call)					 
-						  tok.erase(tok.begin());					 
-					 int lit32 = (int)strtol(tok.c_str(), NULL, 0);
+                if(tok.at(0) == 35)                
+                   tok.erase(tok.begin());
+
+                int lit32 = 0;
+                if(tok.at(0) == 38)
+                {
+                   tok.erase(tok.begin());
+                   GetWordAddress(tok, lit32);
+                }
+                else
+                   lit32 = (int)strtol(tok.c_str(), NULL, 0);               					  					 
+					 
 					 AddLit(lit32, call);
 				}
 
@@ -795,21 +805,38 @@ bool CCompiler::IsLittleInst(char inst)
 
 void CCompiler::InitWordMap()
 {
-	 nameMap["warm"]  = 0xA9;
-	 nameMap["relay"] = 0xA1;
-	 nameMap["*.17"] = 0xB0;
-	 nameMap["*."] = 0xB7;
+	 nameMap["warm"]     = 0xA9;
+	 nameMap["relay"]    = 0xA1;
+	 nameMap["*.17"]     = 0xB0;
+	 nameMap["*."]       = 0xB7;
 	 nameMap["triangle"] = 0xCE;
-	 nameMap["clc"] = 0x2D3;
-	 nameMap["--u/mod"] = 0x2D5;
-	 nameMap["-u/mod"] = 0x2D6;
-	 nameMap["interp"] = 0xC4;
-	 nameMap["taps"] = 0xBC;
-	 nameMap["poly"] = 0xAA;
-	 nameMap["lsh"] = 0xD9;
-	 nameMap["rsh"] = 0xDB;
-	 nameMap["-dac"] = 0xBC;
-	 nameMap["boot"] = 0xAE;	 
+	 nameMap["clc"]      = 0x2D3;
+	 nameMap["--u/mod"]  = 0x2D5;
+	 nameMap["-u/mod"]   = 0x2D6;
+	 nameMap["interp"]   = 0xC4;
+	 nameMap["taps"]     = 0xBC;
+	 nameMap["poly"]     = 0xAA;
+	 nameMap["lsh"]      = 0xD9;
+	 nameMap["rsh"]      = 0xDB;
+	 nameMap["-dac"]     = 0xBC;
+	 nameMap["boot"]     = 0xAE;
+    nameMap["io"]       = 0x15D;
+    nameMap["data"]     = 0x141;
+    nameMap["---u"]     = 0x145;
+    nameMap["--l-"]     = 0x175;
+    nameMap["--lu"]     = 0x165;
+    nameMap["-d--"]     = 0x115;
+    nameMap["-d-u"]     = 0x105;
+    nameMap["-dl-"]     = 0x135;
+    nameMap["-dlu"]     = 0x125;
+    nameMap["r---"]     = 0x1D5;
+    nameMap["r--u"]     = 0x1C5;
+    nameMap["r-l-"]     = 0x1F5;
+    nameMap["r-lu"]     = 0x1E5;
+    nameMap["rd--"]     = 0x195;
+    nameMap["rd-u"]     = 0x185;
+    nameMap["rdl-"]     = 0x1B5;
+    nameMap["rdlu"]     = 0x1A5;
 }
 
 
