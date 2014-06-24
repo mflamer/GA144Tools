@@ -78,21 +78,31 @@ int main(int argc, char **argv)
 							std::cout << "could not write boot stream to file \n";
 					 
 
-                char* lpBuffer = new char[500];                
+                char* lpBuffer = new char[5000];                
                 int nBytesRead = 0;
-                for(int i = 0; i < 500; i++)
+                for(int i = 0; i < 5000; i++)
                 {
                    lpBuffer[i] = 0;
                 }                
-                for(int i = 0; i < 0xFFFFFF; i++)
+                for(int i = 0; i < 0xFFFFFFF; i++)
                 {
                    nBytesRead++;
                 }
 
-                nBytesRead = serial.ReadData(lpBuffer, 500);
+                nBytesRead = serial.ReadData(lpBuffer, 5000);
                 string strOut(lpBuffer, nBytesRead);
                 if(nBytesRead)
-                  std::cout << "cool we read some data back - " << strOut << "\n";
+                {
+                    std::cout << "- cool we read some data back - " << "\n";
+                   for(int i = 0; i < nBytesRead / 3; i += 3)
+                   { 
+                      int x = (unsigned char)lpBuffer[i];                      
+                      x |= (unsigned char)lpBuffer[i+1] << 8;
+                      x |= (unsigned char)lpBuffer[i+2] << 16;
+                      printf("%#x \n", x);
+                   }
+                }
+                 
 
                 //serial.Close();
 

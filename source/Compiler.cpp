@@ -89,7 +89,7 @@ void CCompiler::EndBlock()
    if(fwrite(binBlk.data(), 1, binBlk.size(), binout) == binBlk.size())
    {
       Reset();
-      std::cout << "Sucessfully wrote a block to the file \n";
+      // std::cout << "Sucessfully wrote a block to the file \n";
    }
    else
       std::cout << "error: failed to write block to file \n";
@@ -363,20 +363,20 @@ void CCompiler::CompileFile(std::string SrcFileName)
                || (tok.size() > 1 && tok.at(0) == 35)  // "#"
                || (tok.size() > 1 && tok.at(0) == 38)) // "&"
 				{
-					 bool call = !(tok.at(0) == 35);
-                if(tok.at(0) == 35)                
-                   tok.erase(tok.begin());
+					bool call = !(tok.at(0) == 35);
+					if(tok.at(0) == 35)                
+					   tok.erase(tok.begin());
 
-                int lit32 = 0;
-                if(tok.at(0) == 38)
-                {
-                   tok.erase(tok.begin());
-                   GetWordAddress(tok, lit32);
-                }
-                else
-                   lit32 = (int)strtol(tok.c_str(), NULL, 0);               					  					 
+					int lit32 = 0;
+					if(tok.at(0) == 38)
+					{
+					   tok.erase(tok.begin());
+					   GetWordAddress(tok, lit32);
+					}
+					else
+					   lit32 = (int)strtol(tok.c_str(), NULL, 0);               					  					 
 					 
-					 AddLit(lit32, call);
+					AddLit(lit32, call);
 				}
 
 
@@ -443,15 +443,15 @@ void CCompiler::CompileFile(std::string SrcFileName)
 						  AddInst(0x03); // "call"
 					 }                
 					 
-					 if(!GetWordAddress(thisTok, addr))
-                {
-                    ForwardRef ref;
-						  ref.ident = thisTok;
-						  ref.ic = ic;
-						  ref.slot = slot;
-						  fRefs.push_back(ref);
-						  std::cout << "forward reference - " << thisTok.c_str() <<  " \n";
-                }									 
+					if(!GetWordAddress(thisTok, addr))
+					{
+						ForwardRef ref;
+						ref.ident = thisTok;
+						ref.ic = ic;
+						ref.slot = slot;
+						fRefs.push_back(ref);
+						std::cout << "forward reference - " << thisTok.c_str() <<  " \n";
+					}									 
 
 					 AddAddress(addr);					 
 				}
@@ -895,7 +895,10 @@ void CCompiler::InitBootOrder()
       fGrid[fNodeBootOrder.at(j)] = n;
    }
 
-   
+   //Boot node
+   TNode n;
+   n.fRamWords = 0;
+   fGrid[708] = n;
 }
 
 void CCompiler::InitBootPath()
@@ -1045,7 +1048,7 @@ void CCompiler::WriteBootChipSeq()
    //Each node except the last and boot node gets a port pump
    pumpTotal += 142 * 5;
 
-   EndFrame(0x1D5, 0xAE, pumpTotal); 
+   EndFrame(0x1D5, 0xAE, pumpTotal); //We are ending an empty frame, this is just to set the header
 
    //Now we start adding the code///////
    //First the port pumps for all the nodes except the last and boot node
@@ -1073,10 +1076,22 @@ void CCompiler::WriteBootChipSeq()
        if(fGrid[fNodeBootOrder[i]].fCode.size() == 0)
           DefaultInit();
        else// Or write the nodes code
-         if(fwrite(fGrid[fNodeBootOrder[i]].fCode.data(), 1, fGrid[fNodeBootOrder[i]].fCode.size(), binout) != fGrid[fNodeBootOrder[i]].fCode.size())
+       if(fwrite(fGrid[fNodeBootOrder[i]].fCode.data(), 1, fGrid[fNodeBootOrder[i]].fCode.size(), binout) != fGrid[fNodeBootOrder[i]].fCode.size())		 
             std::cout << "error: failed to write block to file \n";
     }
 
     Reset();
+
+	//Now add last boot frame to take care of the boot node (708)
+	if(fGrid.find(708) != fGrid.end())
+	{
+		EndFrame(0, 0, fGrid[708].fRamWords); //We are ending an empty frame, this is just to set the header
+		if(fwrite(fGrid[708].fCode.data(), 1, fGrid[708].fRamWords * 3, binout) != fGrid[708].fRamWords * 3)		 
+            std::cout << "error: failed to write block to file \n";
+	}
+
+	
+
+
 
 }
